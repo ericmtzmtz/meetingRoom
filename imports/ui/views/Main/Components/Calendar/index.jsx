@@ -1,499 +1,503 @@
+/* eslint-disable max-classes-per-file */
+/* eslint-disable react/no-unused-state */
 import * as React from 'react';
-import {
-  ViewState,
-  GroupingState,
-  IntegratedGrouping,
-} from '@devexpress/dx-react-scheduler';
+import Paper from '@material-ui/core/Paper';
+import { ViewState, EditingState } from '@devexpress/dx-react-scheduler';
 import {
   Scheduler,
-  WeekView,
-  DayView,
-  Appointments,
   Toolbar,
-  DateNavigator,
+  MonthView,
+  WeekView,
   ViewSwitcher,
-  AllDayPanel,
+  Appointments,
   AppointmentTooltip,
   AppointmentForm,
-  GroupingPanel,
-  Resources,
-  MonthView,
+  DragDropProvider,
+  EditRecurrenceMenu,
+  AllDayPanel,
+  DayView,
 } from '@devexpress/dx-react-scheduler-material-ui';
 import { connectProps } from '@devexpress/dx-react-core';
-import { withStyles, makeStyles, alpha } from '@material-ui/core/styles';
-import PriorityHigh from '@material-ui/icons/PriorityHigh';
-import LowPriority from '@material-ui/icons/LowPriority';
-import Lens from '@material-ui/icons/Lens';
-import Event from '@material-ui/icons/Event';
-import AccessTime from '@material-ui/icons/AccessTime';
-import Paper from '@material-ui/core/Paper';
-import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
-import Grid from '@material-ui/core/Grid';
-import FormControl from '@material-ui/core/FormControl';
-import classNames from 'clsx';
+import { KeyboardDateTimePicker, MuiPickersUtilsProvider } from '@material-ui/pickers';
+import MomentUtils from '@date-io/moment';
+import { withStyles } from '@material-ui/core/styles';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import Button from '@material-ui/core/Button';
+import Fab from '@material-ui/core/Fab';
+import IconButton from '@material-ui/core/IconButton';
+import AddIcon from '@material-ui/icons/Add';
+import TextField from '@material-ui/core/TextField';
+import LocationOn from '@material-ui/icons/LocationOn';
+import Notes from '@material-ui/icons/Notes';
+import Close from '@material-ui/icons/Close';
+import CalendarToday from '@material-ui/icons/CalendarToday';
+import Create from '@material-ui/icons/Create';
 
-import { priorities } from '../data/tasks';
-import { data as tasks } from '../data/grouping';
+import { appointments } from '../data/appoiments';
 
-const grouping = [{
-  resourceName: 'priorityId',
-}];
-
-const filterTasks = (items, priorityId) => items.filter(task => (
-  !priorityId || task.priorityId === priorityId
-));
-
-const getIconById = (id) => {
-  if (id === 1) {
-    return LowPriority;
-  }
-  if (id === 2) {
-    return Event;
-  }
-  return PriorityHigh;
-};
-
-const styles = theme => ({
-  flexibleSpace: {
-    margin: '0 auto 0 0',
-  },
-  prioritySelector: {
-    marginLeft: theme.spacing(2),
-    minWidth: 140,
-    '@media (max-width: 500px)': {
-      minWidth: 0,
-      fontSize: '0.75rem',
-      marginLeft: theme.spacing(0.5),
-    },
-  },
-});
-const usePrioritySelectorItemStyles = makeStyles(({ palette, spacing }) => ({
-  bullet: ({ color }) => ({
-    backgroundColor: color ? color[400] : palette.divider,
-    borderRadius: '50%',
-    width: spacing(2),
-    height: spacing(2),
-    marginRight: spacing(2),
-    display: 'inline-block',
-  }),
-  prioritySelectorItem: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  priorityText: {
-    '@media (max-width: 500px)': {
-      display: 'none',
-    },
-  },
-  priorityShortText: {
-    '@media (min-width: 500px)': {
-      display: 'none',
-    },
-  },
-}));
-const useTooltipContentStyles = makeStyles(theme => ({
-  content: {
-    padding: theme.spacing(3, 1),
-    paddingTop: 0,
-    backgroundColor: theme.palette.background.paper,
-    boxSizing: 'border-box',
-    width: '400px',
-  },
-  contentContainer: {
-    paddingBottom: theme.spacing(1.5),
-  },
-  text: {
-    ...theme.typography.body2,
-    display: 'inline-block',
-  },
-  title: {
-    ...theme.typography.h6,
-    color: theme.palette.text.secondary,
-    fontWeight: theme.typography.fontWeightBold,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'normal',
-  },
-  icon: {
-    verticalAlign: 'middle',
-  },
-  contentItemIcon: {
-    textAlign: 'center',
-  },
-  grayIcon: {
-    color: theme.palette.action.active,
-  },
-  colorfulContent: {
-    color: ({ color }) => color[300],
-  },
-  lens: {
-    width: theme.spacing(4.5),
-    height: theme.spacing(4.5),
-    verticalAlign: 'super',
-  },
-  textCenter: {
-    textAlign: 'center',
-  },
-  dateAndTitle: {
-    lineHeight: 1.1,
-  },
-  titleContainer: {
+const containerStyles = theme => ({
+  container: {
+    width: theme.spacing(68),
+    padding: 0,
     paddingBottom: theme.spacing(2),
   },
-  container: {
-    paddingBottom: theme.spacing(1.5),
+  content: {
+    padding: theme.spacing(2),
+    paddingTop: 0,
   },
-}));
-const groupingStyles = ({ spacing }) => ({
-  ...priorities.reduce((acc, priority) => ({
-    ...acc,
-    [`cell${priority.text.replace(' ', '')}`]: {
-      backgroundColor: alpha(priority.color[400], 0.1),
-      '&:hover': {
-        backgroundColor: alpha(priority.color[400], 0.15),
-      },
-      '&:focus': {
-        backgroundColor: alpha(priority.color[400], 0.2),
-      },
+  header: {
+    overflow: 'hidden',
+    paddingTop: theme.spacing(0.5),
+  },
+  closeButton: {
+    float: 'right',
+  },
+  buttonGroup: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    padding: theme.spacing(0, 2),
+  },
+  button: {
+    marginLeft: theme.spacing(2),
+  },
+  picker: {
+    marginRight: theme.spacing(2),
+    '&:last-child': {
+      marginRight: 0,
     },
-    [`headerCell${priority.text.replace(' ', '')}`]: {
-      backgroundColor: alpha(priority.color[400], 0.1),
-      '&:hover': {
-        backgroundColor: alpha(priority.color[400], 0.1),
-      },
-      '&:focus': {
-        backgroundColor: alpha(priority.color[400], 0.1),
-      },
-    },
-  }), {}),
+    width: '50%',
+  },
+  wrapper: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: theme.spacing(1, 0),
+  },
   icon: {
-    paddingLeft: spacing(1),
-    verticalAlign: 'middle',
+    margin: theme.spacing(2, 0),
+    marginRight: theme.spacing(2),
+  },
+  textField: {
+    width: '100%',
   },
 });
 
-const DayViewTimeTableCell = withStyles(groupingStyles, { name: 'DayViewTimeTableCell' })(({
-  groupingInfo, classes, ...restProps
-}) => {
-  const groupId = groupingInfo[0].id;
-  return (
-    <DayView.TimeTableCell
-      className={classNames({
-        [classes.cellLowPriority]: groupId === 1,
-        [classes.cellMediumPriority]: groupId === 2,
-        [classes.cellHighPriority]: groupId === 3,
-      })}
-      groupingInfo={groupingInfo}
-      {...restProps}
-    />
-  );
-});
-const DayViewDayScaleCell = withStyles(groupingStyles, { name: 'DayViewDayScaleCell' })(({
-  groupingInfo, classes, ...restProps
-}) => {
-  const groupId = groupingInfo[0].id;
-  return (
-    <DayView.DayScaleCell
-      className={classNames({
-        [classes.headerCellLowPriority]: groupId === 1,
-        [classes.headerCellMediumPriority]: groupId === 2,
-        [classes.headerCellHighPriority]: groupId === 3,
-      })}
-      groupingInfo={groupingInfo}
-      {...restProps}
-    />
-  );
-});
-const WeekViewTimeTableCell = withStyles(groupingStyles, { name: 'WeekViewTimeTableCell' })(({
-  groupingInfo, classes, ...restProps
-}) => {
-  const groupId = groupingInfo[0].id;
-  return (
-    <WeekView.TimeTableCell
-      className={classNames({
-        [classes.cellLowPriority]: groupId === 1,
-        [classes.cellMediumPriority]: groupId === 2,
-        [classes.cellHighPriority]: groupId === 3,
-      })}
-      groupingInfo={groupingInfo}
-      {...restProps}
-    />
-  );
-});
-const WeekViewDayScaleCell = withStyles(groupingStyles, { name: 'WeekViewDayScaleCell' })(({
-  groupingInfo, classes, ...restProps
-}) => {
-  const groupId = groupingInfo[0].id;
-  return (
-    <WeekView.DayScaleCell
-      className={classNames({
-        [classes.headerCellLowPriority]: groupId === 1,
-        [classes.headerCellMediumPriority]: groupId === 2,
-        [classes.headerCellHighPriority]: groupId === 3,
-      })}
-      groupingInfo={groupingInfo}
-      {...restProps}
-    />
-  );
-});
-const AllDayCell = withStyles(groupingStyles, { name: 'AllDayCell' })(({
-  groupingInfo, classes, ...restProps
-}) => {
-  const groupId = groupingInfo[0].id;
-  return (
-    <AllDayPanel.Cell
-      className={classNames({
-        [classes.cellLowPriority]: groupId === 1,
-        [classes.cellMediumPriority]: groupId === 2,
-        [classes.cellHighPriority]: groupId === 3,
-      })}
-      groupingInfo={groupingInfo}
-      {...restProps}
-    />
-  );
-});
-const GroupingPanelCell = withStyles(groupingStyles, { name: 'GroupingPanelCell' })(({
-  group, classes, ...restProps
-}) => {
-  const groupId = group.id;
-  const Icon = getIconById(groupId);
-  return (
-    <GroupingPanel.Cell
-      className={classNames({
-        [classes.headerCellLowPriority]: groupId === 1,
-        [classes.headerCellMediumPriority]: groupId === 2,
-        [classes.headerCellHighPriority]: groupId === 3,
-      })}
-      group={group}
-      {...restProps}
-    >
-      <Icon
-        className={classes.icon}
-      />
-    </GroupingPanel.Cell>
-  );
-});
-
-const PrioritySelectorItem = ({
-  color, text: resourceTitle,
-}) => {
-  const text = resourceTitle || 'All Tasks';
-  const shortText = resourceTitle ? text.substring(0, 1) : 'All';
-  const classes = usePrioritySelectorItemStyles({ color });
-
-  return (
-    <div className={classes.prioritySelectorItem}>
-      <span className={classes.bullet} />
-      <span className={classes.priorityText}>{text}</span>
-      <span className={classes.priorityShortText}>{shortText}</span>
-    </div>
-  );
-};
-
-const PrioritySelector = withStyles(styles, { name: 'PrioritySelector' })(({
-  classes, priorityChange, priority,
-}) => {
-  const currentPriority = priority > 0 ? priorities[priority - 1] : {};
-  return (
-    <FormControl className={classes.prioritySelector}>
-      <Select
-        disableUnderline
-        value={priority}
-        onChange={(e) => {
-          priorityChange(e.target.value);
-        }}
-        renderValue={() => (
-          <PrioritySelectorItem text={currentPriority.text} color={currentPriority.color} />
-        )}
-      >
-        <MenuItem value={0}>
-          <PrioritySelectorItem />
-        </MenuItem>
-        {priorities.map(({ id, color, text }) => (
-          <MenuItem value={id} key={id.toString()}>
-            <PrioritySelectorItem color={color} text={text} />
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
-});
-
-const FlexibleSpace = withStyles(styles, { name: 'FlexibleSpace' })(({
-  classes, priority, priorityChange, ...restProps
-}) => (
-  <Toolbar.FlexibleSpace {...restProps} className={classes.flexibleSpace}>
-    <PrioritySelector priority={priority} priorityChange={priorityChange} />
-  </Toolbar.FlexibleSpace>
-));
-const TooltipContent = ({
-  appointmentData, formatDate, appointmentResources,
-}) => {
-  const resource = appointmentResources[0];
-  const classes = useTooltipContentStyles({ color: resource.color });
-  let icon = <LowPriority className={classes.icon} />;
-  if (appointmentData.priorityId === 2) {
-    icon = <Event className={classes.icon} />;
-  }
-  if (appointmentData.priorityId === 3) {
-    icon = <PriorityHigh className={classes.icon} />;
-  }
-  return (
-    <div className={classes.content}>
-      <Grid container alignItems="flex-start" className={classes.titleContainer}>
-        <Grid item xs={2} className={classNames(classes.textCenter)}>
-          <Lens className={classNames(classes.lens, classes.colorfulContent)} />
-        </Grid>
-        <Grid item xs={10}>
-          <div>
-            <div className={classNames(classes.title, classes.dateAndTitle)}>
-              {appointmentData.title}
-            </div>
-            <div className={classNames(classes.text, classes.dateAndTitle)}>
-              {formatDate(appointmentData.startDate, { day: 'numeric', weekday: 'long' })}
-            </div>
-          </div>
-        </Grid>
-      </Grid>
-      <Grid container alignItems="center" className={classes.contentContainer}>
-        <Grid item xs={2} className={classes.textCenter}>
-          <AccessTime className={classes.icon} />
-        </Grid>
-        <Grid item xs={10}>
-          <div className={classes.text}>
-            {`${formatDate(appointmentData.startDate, { hour: 'numeric', minute: 'numeric' })}
-              - ${formatDate(appointmentData.endDate, { hour: 'numeric', minute: 'numeric' })}`}
-          </div>
-        </Grid>
-      </Grid>
-      <Grid container alignItems="center" key={`${resource.fieldName}_${resource.id}`}>
-        <Grid
-          className={classNames(classes.contentItemIcon, classes.icon, classes.colorfulContent)}
-          item
-          xs={2}
-        >
-          {icon}
-        </Grid>
-        <Grid item xs={10}>
-          <span className={classNames(classes.text, classes.colorfulContent)}>
-            {resource.text}
-          </span>
-        </Grid>
-      </Grid>
-    </div>
-  );
-};
-
-export default class Calendar extends React.PureComponent {
+class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
     super(props);
 
     this.state = {
-      currentDate: new Date(),
-      currentViewName: 'Diario',
-      data: tasks,
-      currentPriority: 0,
-      resources: [{
-        fieldName: 'priorityId',
-        title: 'Priority',
-        instances: priorities,
-      }],
+      appointmentChanges: {},
     };
-    this.currentViewNameChange = (currentViewName) => {
-      this.setState({ currentViewName });
-    };
-    this.currentDateChange = (currentDate) => {
-      this.setState({ currentDate });
-    };
-    this.priorityChange = (value) => {
-      const { resources } = this.state;
-      const nextResources = [{
-        ...resources[0],
-        instances: value > 0 ? [priorities[value - 1]] : priorities,
-      }];
 
-      this.setState({ currentPriority: value, resources: nextResources });
+    this.getAppointmentData = () => {
+      const { appointmentData } = this.props;
+      return appointmentData;
     };
-    this.flexibleSpace = connectProps(FlexibleSpace, () => {
-      const { currentPriority } = this.state;
+    this.getAppointmentChanges = () => {
+      const { appointmentChanges } = this.state;
+      return appointmentChanges;
+    };
+
+    this.changeAppointment = this.changeAppointment.bind(this);
+    this.commitAppointment = this.commitAppointment.bind(this);
+  }
+
+  changeAppointment({ field, changes }) {
+    const nextChanges = {
+      ...this.getAppointmentChanges(),
+      [field]: changes,
+    };
+    this.setState({
+      appointmentChanges: nextChanges,
+    });
+  }
+
+  commitAppointment(type) {
+    const { commitChanges } = this.props;
+    const appointment = {
+      ...this.getAppointmentData(),
+      ...this.getAppointmentChanges(),
+    };
+    if (type === 'deleted') {
+      commitChanges({ [type]: appointment.id });
+    } else if (type === 'changed') {
+      commitChanges({ [type]: { [appointment.id]: appointment } });
+    } else {
+      commitChanges({ [type]: appointment });
+    }
+    this.setState({
+      appointmentChanges: {},
+    });
+  }
+
+  render() {
+    const {
+      classes,
+      visible,
+      visibleChange,
+      appointmentData,
+      cancelAppointment,
+      target,
+      onHide,
+    } = this.props;
+    const { appointmentChanges } = this.state;
+
+    const displayAppointmentData = {
+      ...appointmentData,
+      ...appointmentChanges,
+    };
+
+    const isNewAppointment = appointmentData.id === undefined;
+    const applyChanges = isNewAppointment
+      ? () => this.commitAppointment('added')
+      : () => this.commitAppointment('changed');
+
+    const textEditorProps = field => ({
+      variant: 'outlined',
+      onChange: ({ target: change }) => this.changeAppointment({
+        field: [field], changes: change.value,
+      }),
+      value: displayAppointmentData[field] || '',
+      label: field[0].toUpperCase() + field.slice(1),
+      className: classes.textField,
+    });
+
+    const pickerEditorProps = field => ({
+      className: classes.picker,
+      // keyboard: true,
+      ampm: false,
+      value: displayAppointmentData[field],
+      onChange: date => this.changeAppointment({
+        field: [field], changes: date ? date.toDate() : new Date(displayAppointmentData[field]),
+      }),
+      inputVariant: 'outlined',
+      format: 'DD/MM/YYYY HH:mm',
+      onError: () => null,
+    });
+
+    const cancelChanges = () => {
+      this.setState({
+        appointmentChanges: {},
+      });
+      visibleChange();
+      cancelAppointment();
+    };
+
+    return (
+      <AppointmentForm.Overlay
+        visible={visible}
+        target={target}
+        fullSize
+        onHide={onHide}
+      >
+        <div>
+          <div className={classes.header}>
+            <IconButton
+              className={classes.closeButton}
+              onClick={cancelChanges}
+            >
+              <Close color="action" />
+            </IconButton>
+          </div>
+          <div className={classes.content}>
+            <div className={classes.wrapper}>
+              <Create className={classes.icon} color="action" />
+              <TextField
+                {...textEditorProps('title')}
+              />
+            </div>
+            <div className={classes.wrapper}>
+              <CalendarToday className={classes.icon} color="action" />
+              <MuiPickersUtilsProvider utils={MomentUtils}>
+                <KeyboardDateTimePicker
+                  label="Start Date"
+                  {...pickerEditorProps('startDate')}
+                />
+                <KeyboardDateTimePicker
+                  label="End Date"
+                  {...pickerEditorProps('endDate')}
+                />
+              </MuiPickersUtilsProvider>
+            </div>
+            <div className={classes.wrapper}>
+              <LocationOn className={classes.icon} color="action" />
+              <TextField
+                {...textEditorProps('location')}
+              />
+            </div>
+            <div className={classes.wrapper}>
+              <Notes className={classes.icon} color="action" />
+              <TextField
+                {...textEditorProps('notes')}
+                multiline
+                rows="6"
+              />
+            </div>
+          </div>
+          <div className={classes.buttonGroup}>
+            {!isNewAppointment && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                className={classes.button}
+                onClick={() => {
+                  visibleChange();
+                  this.commitAppointment('deleted');
+                }}
+              >
+                Delete
+              </Button>
+            )}
+            <Button
+              variant="outlined"
+              color="primary"
+              className={classes.button}
+              onClick={() => {
+                visibleChange();
+                applyChanges();
+              }}
+            >
+              {isNewAppointment ? 'Create' : 'Save'}
+            </Button>
+          </div>
+        </div>
+      </AppointmentForm.Overlay>
+    );
+  }
+}
+
+const AppointmentFormContainer = withStyles(containerStyles, { name: 'AppointmentFormContainer' })(AppointmentFormContainerBasic);
+
+const styles = theme => ({
+  addButton: {
+    position: 'absolute',
+    bottom: theme.spacing(1) * 3,
+    right: theme.spacing(1) * 4,
+  },
+});
+
+/* eslint-disable-next-line react/no-multi-comp */
+class Calendar extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      data: appointments,
+      currentDate: new Date(),
+      confirmationVisible: false,
+      editingFormVisible: false,
+      deletedAppointmentId: undefined,
+      editingAppointment: undefined,
+      previousAppointment: undefined,
+      addedAppointment: {},
+      startDayHour: 9,
+      endDayHour: 18,
+      isNewAppointment: false,
+    };
+
+    this.toggleConfirmationVisible = this.toggleConfirmationVisible.bind(this);
+    this.commitDeletedAppointment = this.commitDeletedAppointment.bind(this);
+    this.toggleEditingFormVisibility = this.toggleEditingFormVisibility.bind(this);
+
+    this.commitChanges = this.commitChanges.bind(this);
+    this.onEditingAppointmentChange = this.onEditingAppointmentChange.bind(this);
+    this.onAddedAppointmentChange = this.onAddedAppointmentChange.bind(this);
+    this.appointmentForm = connectProps(AppointmentFormContainer, () => {
+      const {
+        editingFormVisible,
+        editingAppointment,
+        data,
+        addedAppointment,
+        isNewAppointment,
+        previousAppointment,
+      } = this.state;
+
+      const currentAppointment = data
+        .filter(appointment => editingAppointment && appointment.id === editingAppointment.id)[0]
+        || addedAppointment;
+      const cancelAppointment = () => {
+        if (isNewAppointment) {
+          this.setState({
+            editingAppointment: previousAppointment,
+            isNewAppointment: false,
+          });
+        }
+      };
+
       return {
-        priority: currentPriority,
-        priorityChange: this.priorityChange,
+        visible: editingFormVisible,
+        appointmentData: currentAppointment,
+        commitChanges: this.commitChanges,
+        visibleChange: this.toggleEditingFormVisibility,
+        onEditingAppointmentChange: this.onEditingAppointmentChange,
+        cancelAppointment,
       };
     });
   }
 
   componentDidUpdate() {
-    this.flexibleSpace.update(); 
+    this.appointmentForm.update();
+  }
+
+  onEditingAppointmentChange(editingAppointment) {
+    this.setState({ editingAppointment });
+  }
+
+  onAddedAppointmentChange(addedAppointment) {
+    this.setState({ addedAppointment });
+    const { editingAppointment } = this.state;
+    if (editingAppointment !== undefined) {
+      this.setState({
+        previousAppointment: editingAppointment,
+      });
+    }
+    this.setState({ editingAppointment: undefined, isNewAppointment: true });
+  }
+
+  setDeletedAppointmentId(id) {
+    this.setState({ deletedAppointmentId: id });
+  }
+
+  toggleEditingFormVisibility() {
+    const { editingFormVisible } = this.state;
+    this.setState({
+      editingFormVisible: !editingFormVisible,
+    });
+  }
+
+  toggleConfirmationVisible() {
+    const { confirmationVisible } = this.state;
+    this.setState({ confirmationVisible: !confirmationVisible });
+  }
+
+  commitDeletedAppointment() {
+    this.setState((state) => {
+      const { data, deletedAppointmentId } = state;
+      const nextData = data.filter(appointment => appointment.id !== deletedAppointmentId);
+
+      return { data: nextData, deletedAppointmentId: null };
+    });
+    this.toggleConfirmationVisible();
+  }
+
+  commitChanges({ added, changed, deleted }) {
+    this.setState((state) => {
+      let { data } = state;
+      if (added) {
+        const startingAddedId = data.length > 0 ? data[data.length - 1].id + 1 : 0;
+        data = [...data, { id: startingAddedId, ...added }];
+      }
+      if (changed) {
+        data = data.map(appointment => (
+          changed[appointment.id] ? { ...appointment, ...changed[appointment.id] } : appointment));
+      }
+      if (deleted !== undefined) {
+        this.setDeletedAppointmentId(deleted);
+        this.toggleConfirmationVisible();
+      }
+      return { data, addedAppointment: {} };
+    });
   }
 
   render() {
     const {
-      data, currentDate, currentViewName, currentPriority, resources,
+      currentDate,
+      data,
+      confirmationVisible,
+      editingFormVisible,
+      startDayHour,
+      endDayHour,
     } = this.state;
+    const { classes } = this.props;
 
     return (
       <Paper>
         <Scheduler
-          data={filterTasks(data, currentPriority)}
+          data={data}
           height={660}
         >
           <ViewState
             currentDate={currentDate}
-            currentViewName={currentViewName}
-            onCurrentViewNameChange={this.currentViewNameChange}
-            onCurrentDateChange={this.currentDateChange}
           />
-          <GroupingState
-            grouping={grouping}
-          />
-
-          <DayView
-            startDayHour={9}
-            endDayHour={19}
-            timeTableCellComponent={DayViewTimeTableCell}
-            dayScaleCellComponent={DayViewDayScaleCell}
-            intervalCount={2}
-            name="Diario"
+          <EditingState
+            onCommitChanges={this.commitChanges}
+            onEditingAppointmentChange={this.onEditingAppointmentChange}
+            onAddedAppointmentChange={this.onAddedAppointmentChange}
           />
           <WeekView
-            startDayHour={9}
-            endDayHour={17}
-            excludedDays={[0, 6]}
+            startDayHour={startDayHour}
+            endDayHour={endDayHour}
             name="Semanal"
-            timeTableCellComponent={WeekViewTimeTableCell}
-            dayScaleCellComponent={WeekViewDayScaleCell}
           />
-          <MonthView
-            startDayHour={9}
-            endDayHour={17}
+          <DayView
+            startDayHour={startDayHour}
+            endDayHour={endDayHour}
+            name="Diario"
+          />
+          
+          <MonthView 
             name="Mensual"
           />
-          <AllDayPanel
-            cellComponent={AllDayCell}
-          />
-
+          <AllDayPanel />
+          <EditRecurrenceMenu />
           <Appointments />
-          <Resources
-            data={resources}
-          />
-          <IntegratedGrouping />
-
-          <GroupingPanel
-            cellComponent={GroupingPanelCell}
-          />
-          <Toolbar flexibleSpaceComponent={this.flexibleSpace} />
-          <DateNavigator />
-          <ViewSwitcher />
           <AppointmentTooltip
-            contentComponent={TooltipContent}
             showOpenButton
             showCloseButton
+            showDeleteButton
           />
-          <AppointmentForm readOnly />
+          <Toolbar />
+          <ViewSwitcher />
+          <AppointmentForm
+            overlayComponent={this.appointmentForm}
+            visible={editingFormVisible}
+            onVisibilityChange={this.toggleEditingFormVisibility}
+          />
+          <DragDropProvider />
         </Scheduler>
+
+        <Dialog
+          open={confirmationVisible}
+          onClose={this.cancelDelete}
+        >
+          <DialogTitle>
+            Delete Appointment
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this appointment?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={this.toggleConfirmationVisible} color="primary" variant="outlined">
+              Cancel
+            </Button>
+            <Button onClick={this.commitDeletedAppointment} color="secondary" variant="outlined">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Fab
+          color="secondary"
+          className={classes.addButton}
+          onClick={() => {
+            this.setState({ editingFormVisible: true });
+            this.onEditingAppointmentChange(undefined);
+            this.onAddedAppointmentChange({
+              startDate: new Date(currentDate).setHours(startDayHour),
+              endDate: new Date(currentDate).setHours(startDayHour + 1),
+            });
+          }}
+        >
+          <AddIcon />
+        </Fab>
       </Paper>
     );
   }
 }
+
+export default withStyles(styles, { name: 'EditingDemo' })(Calendar);
