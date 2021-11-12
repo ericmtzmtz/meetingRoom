@@ -1,6 +1,14 @@
 import React from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import { useRoutes, Navigate } from 'react-router-dom';
+import {
+  NotFoundView,
+  MainLayout,
+  Main,
+} from './views'
+
+
+
 /** 
 * Generamos la instancia que gestiona las rutas de la aplicacion
 * @param {String} toggleTheme - Almacena el estado del tema.
@@ -9,22 +17,33 @@ import { useRoutes, Navigate } from 'react-router-dom';
 export const Routes = ({toggleTheme}) => {
   console.log('Load Routes')
 
-  const { user, isLoggedIn } = useTracker(() => {
-    const user = Meteor.user()
-    const userId = Meteor.userId()
-    const isLoggingIn = Meteor.loggingIn()
-    return {
-      user,
-      userId,
-      isLoggingIn,
-      isLoggedIn: !!userId
-    }
-  }, [])
+  // const { user, isLoggedIn } = useTracker(() => {
+  //   const user = Meteor.user()
+  //   const userId = Meteor.userId()
+  //   const isLoggingIn = Meteor.loggingIn()
+  //   return {
+  //     user,
+  //     userId,
+  //     isLoggingIn,
+  //     isLoggedIn: !!userId
+  //   }
+  // }, [])
+  isLoggedIn = true
 
   const routes = [
     {
       path: '/',
-      element: isLoggedIn ? console.log('Logged in') : console.log('No logged in')
+      element: isLoggedIn ? (
+        <MainLayout
+          toggleTheme={toggleTheme}
+        />
+      ) : console.log('to Loggin view'),
+      children: [
+        {path: '404', element: <NotFoundView />},
+        {path: '*', element: <Navigate to="404" />},
+        {path: '/index', element: <Main />},
+        {path: '/', element: <Navigate to="index" />},
+      ]
     },
     {
       path: "login",

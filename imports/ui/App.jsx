@@ -1,8 +1,10 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { ThemeProvider, createTheme } from "@material-ui/core/styles";
 import { CssBaseline } from "@material-ui/core";
 import GlobalStyles from "./globalStyles";
 import { Routes } from './routes';
+
+import Theme from './views/Components/Theme';
 
 export const App = () => {
   let mode = localStorage.getItem("theme");
@@ -12,7 +14,7 @@ export const App = () => {
     mode !== "dark" ? (mode = "dark") : (mode = "light");
     let theme = Theme(mode);
     localStorage.setItem("theme", mode);
-    setMyTheme(createMuiTheme(theme));
+    setMyTheme(createTheme(theme));
   };
 
   return (
