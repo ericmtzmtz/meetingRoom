@@ -5,6 +5,7 @@ import {
   NotFoundView,
   MainLayout,
   Main,
+  Login
 } from './views'
 
 
@@ -17,18 +18,17 @@ import {
 export const Routes = ({toggleTheme}) => {
   console.log('Load Routes')
 
-  // const { user, isLoggedIn } = useTracker(() => {
-  //   const user = Meteor.user()
-  //   const userId = Meteor.userId()
-  //   const isLoggingIn = Meteor.loggingIn()
-  //   return {
-  //     user,
-  //     userId,
-  //     isLoggingIn,
-  //     isLoggedIn: !!userId
-  //   }
-  // }, [])
-  isLoggedIn = true
+  const { user, isLoggedIn } = useTracker(() => {
+    const user = Meteor.user()
+    const userId = Meteor.userId()
+    const isLoggingIn = Meteor.loggingIn()
+    return {
+      user,
+      userId,
+      isLoggingIn,
+      isLoggedIn: !!userId
+    }
+  }, [])
 
   const routes = [
     {
@@ -37,7 +37,7 @@ export const Routes = ({toggleTheme}) => {
         <MainLayout
           toggleTheme={toggleTheme}
         />
-      ) : console.log('to Loggin view'),
+      ) : (<Navigate to="login" />),
       children: [
         {path: '404', element: <NotFoundView />},
         {path: '*', element: <Navigate to="404" />},
@@ -48,7 +48,7 @@ export const Routes = ({toggleTheme}) => {
     {
       path: "login",
       element: !isLoggedIn ? (
-        console.log('Loggin View')
+        <Login />
       ) : (
         <Navigate to="/" />
       ),

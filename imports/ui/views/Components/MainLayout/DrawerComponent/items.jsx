@@ -1,5 +1,8 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { 
+  NavLink, 
+  useMatch,
+  useResolvedPath } from 'react-router-dom';
 import {
   ListItem,
   Button,
@@ -42,10 +45,10 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-export const ItemsDrawer = ({
-  className, href, icon: Icon, title, ...rest
-}) => {
+export const ItemsDrawer = ({className, href, icon: Icon, title, ...rest}) => {
   const classes = useStyles();
+  let resolved = useResolvedPath(href);
+  let match = useMatch({ path: resolved.pathname, end: true });
   
   return (
     <ListItem
@@ -54,8 +57,7 @@ export const ItemsDrawer = ({
       {...rest}
       >
       <Button
-        activeClassName={classes.active}
-        className={classes.button}
+        className={match ? classes.active : classes.button}
         component={NavLink}
         to={href}
       >

@@ -1,31 +1,33 @@
 import { Meteor } from 'meteor/meteor';
-import { LinksCollection } from '/imports/api/links';
+import { Accounts } from 'meteor/accounts-base';
 
-function insertLink({ title, url }) {
-  LinksCollection.insert({title, url, createdAt: new Date()});
-}
+// Importamos metodos
+import '/imports/startup/server';
+
+var users = [
+  { name: "Usuario", email: "user@mail.com", roles: ['user'] },
+  { name: "Admin", email: "admin@mail.com", roles: ['admin'] },
+];
 
 Meteor.startup(() => {
-  // If the Links collection is empty, add some data.
-  if (LinksCollection.find().count() === 0) {
-    insertLink({
-      title: 'Do the Tutorial',
-      url: 'https://www.meteor.com/tutorials/react/creating-an-app'
-    });
+  if (Meteor.users.find().count() === 0) {
+    users.forEach(function (user) {
+      var id;
 
-    insertLink({
-      title: 'Follow the Guide',
-      url: 'http://guide.meteor.com'
-    });
+      id = Accounts.createUser({
+        email: user.email,
+        password: "2LyzLLBxwf75geM",
+        profile: { name: user.name }
+      });
 
-    insertLink({
-      title: 'Read the Docs',
-      url: 'https://docs.meteor.com'
-    });
+      if (Meteor.roleAssignment.find({ 'user._id': id }).count() === 0) {
+        user.roles.forEach(function (role) {
+          Roles.createRole(role, { unlessExists: true });
+        });
+        // Need _id of existing user record so this call must come after `Accounts.createUser`.
+        Roles.addUsersToRoles(id, user.roles);
+      }
 
-    insertLink({
-      title: 'Discussions',
-      url: 'https://forums.meteor.com'
     });
   }
 });
