@@ -30,7 +30,7 @@ export const App = () => {
         maxSnack={4}
         iconVariant={{
           success: " ✅ ",
-          error: " ✖️ ",
+          error: " ❌ ",
           warning: " ⚠️ ",
           info: " ℹ️ ",
         }}
