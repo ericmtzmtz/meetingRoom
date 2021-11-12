@@ -115,7 +115,7 @@ export const DrawerComponent = ({mobileOpen, handleDrawerToggle}) => {
   const user = {
     avatar: '/img/avatar/avatar.png',
     jobTitle: 'Senior Developer',
-    name: 'Katarina Smith'
+    name: 'Eric Martinez'
   };
 
   let existRole = false;
