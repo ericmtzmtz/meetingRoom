@@ -16,8 +16,6 @@ import {
 * @return {ReturnValueDataTypeHere} Brief description of the returning value here.
 */ 
 export const Routes = ({toggleTheme}) => {
-  console.log('Load Routes')
-
   const { user, isLoggedIn } = useTracker(() => {
     const user = Meteor.user()
     const userId = Meteor.userId()
