@@ -358,7 +358,10 @@ export const Calendar = () => {
         <Toolbar
           flexibleSpaceComponent={FlexibleSpace}
         />
-        <CurrentTimeIndicator />
+        <CurrentTimeIndicator
+          updateInterval={15000}
+          shadePreviousAppointments={true}
+        />
         <ViewSwitcher/>
         <GroupingPanel 
           cellComponent={GroupingPanelCell}

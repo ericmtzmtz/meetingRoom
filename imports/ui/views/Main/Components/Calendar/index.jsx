@@ -6,13 +6,14 @@ import { green, orange, purple, pink,  } from '@material-ui/core/colors';
 import FormControl from '@material-ui/core/FormControl';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
-import { 
+import { useSnackbar } from 'notistack';
+import {
   EditingState,
-  GroupingState, 
-  IntegratedEditing, 
-  IntegratedGrouping, 
-  Resources, 
-  ViewState, 
+  GroupingState,
+  IntegratedEditing,
+  IntegratedGrouping,
+  Resources,
+  ViewState,
 } from '@devexpress/dx-react-scheduler';
 import {
   Scheduler,
@@ -33,27 +34,27 @@ const schedulerData = [
     {
       title: 'Website Re-Design Plan',
       room_id: 1,
-      startDate: '2021-11-15T11:00',
-      endDate: '2021-11-15T13:00',
+      startDate: new Date('2021-11-15T11:00'),
+      endDate: new Date('2021-11-15T13:00'),
       id: 0,
     }, {
       title: 'Book Flights to San Fran for Sales Trip',
       room_id: 2,
-      startDate: '2021-11-15T09:00',
-      endDate: '2021-11-15T11:00',
+      startDate: new Date('2021-11-15T09:00'),
+      endDate: new Date('2021-11-15T11:00'),
       id: 1,
     }, {
       title: 'Install New Router in Dev Room',
       room_id: 3,
-      startDate: '2021-11-15T13:00',
-      endDate: '2021-11-15T15:00',
+      startDate: new Date('2021-11-15T13:00'),
+      endDate: new Date('2021-11-15T15:00'),
       id: 2,
     },
     {
       title: 'Install New Router in Dev Room',
       room_id: 4,
-      startDate: '2021-11-15T10:00',
-      endDate: '2021-11-15T12:00',
+      startDate: new Date('2021-11-15T10:00'),
+      endDate: new Date('2021-11-15T12:00'),
       id: 3,
     },
   ];
@@ -137,6 +138,7 @@ const styles = theme => ({
 
 export const Calendar = () => {
   const [data, setData] = React.useState(schedulerData);
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   // const [users, setUsers] = React.useState([])
   const [priority, setPriority] = React.useState(0);
   const [resources, setResources] =React.useState([
@@ -171,7 +173,7 @@ export const Calendar = () => {
     const text = resourceTitle || 'Ver Todas las salas';
     const shortText = resourceTitle ? text.substring(0, 1) : 'Salas';
     const classes = usePrioritySelectorItemStyles({ color });
-  
+
     return (
       <div className={classes.prioritySelectorItem}>
         <span className={classes.bullet} />
@@ -225,41 +227,6 @@ export const Calendar = () => {
       )
   });
 
-  const filterTasks = (items, priorityId) => {
-    return(
-      items.filter(task => (!priorityId || task.room_id === priorityId))
-  )}
-
-  const filterRooms = (changePriority) =>{
-    setPriority(changePriority)
-    setResources([{
-      fieldName: "room_id",
-      title: "Salas",
-      instances: room_data.filter(room => (room.id === changePriority))
-    }])
-    if (changePriority === 0) {
-      setResources([{
-        fieldName: "room_id",
-        title: "Salas",
-        instances: room_data
-      }])
-    }
-  }
-
-  const handle_Changes = ({added, changed, deleted}) => {
-    if (added) {
-      const startingAddedId = data.length > 0 ? data[data.length - 1].id + 1 : 0;
-      setData([...data, { id: startingAddedId, ...added }]);
-    }
-    if (changed) {
-      setData(data.map(appointment => (
-        changed[appointment.id] ? { ...appointment, ...changed[appointment.id] } : appointment)));
-    }
-    if (deleted !== undefined) {
-      setData(data.filter(appointment => appointment.id !== deleted));
-    }
-  }
-
   const TimeTableCell = React.memo(({ groupingInfo, ...restProps }) => {
     // groupingInfo = room_data
     const classes = useGroupingStyles(groupingInfo[0]);
@@ -271,7 +238,7 @@ export const Calendar = () => {
       />
     );
   });
-  
+
   const DayScaleCell = React.memo(({ groupingInfo, ...restProps }) => {
     // groupingInfo = room_data
     // room_data.map(item => (
@@ -307,7 +274,47 @@ export const Calendar = () => {
   const grouping = [{
     resourceName: 'room_id',
   }];
-  
+
+  const filterTasks = (items, priorityId) => {
+    return(
+      items.filter(task => (!priorityId || task.room_id === priorityId))
+  )}
+
+  const filterRooms = (changePriority) =>{
+    setPriority(changePriority)
+    setResources([{
+      fieldName: "room_id",
+      title: "Salas",
+      instances: room_data.filter(room => (room.id === changePriority))
+    }])
+    if (changePriority === 0) {
+      setResources([{
+        fieldName: "room_id",
+        title: "Salas",
+        instances: room_data
+      }])
+    }
+  }
+
+  const handle_Changes = ({added, changed, deleted}) => {
+    if (added) {
+      if(added["endDate"] - added["startDate"] > 7200000){
+        enqueueSnackbar(
+          'Ocurrio un error No puedes programar mas de 2 horas!'
+          , {variant: 'error'})
+        return null
+      }
+      const startingAddedId = data.length > 0 ? data[data.length - 1].id + 1 : 0;
+      setData([...data, { id: startingAddedId, ...added }]);
+    }
+    if (changed) {
+      setData(data.map(appointment => (
+        changed[appointment.id] ? { ...appointment, ...changed[appointment.id] } : appointment)));
+    }
+    if (deleted !== undefined) {
+      setData(data.filter(appointment => appointment.id !== deleted));
+    }
+  }
 
   return (
     <Paper>
@@ -318,7 +325,7 @@ export const Calendar = () => {
         <ViewState
           currentDate={currentDate}
         />
-        <EditingState 
+        <EditingState
           onCommitChanges={handle_Changes}
         />
         <GroupingState
@@ -350,17 +357,22 @@ export const Calendar = () => {
         />
         <IntegratedGrouping />
         <IntegratedEditing />
-        <AppointmentTooltip/>
-        <AppointmentForm 
-          appointmentData={false}
+        <AppointmentTooltip
+          showOpenButton
+          showCloseButton
         />
+        <AppointmentForm />
 
         <Toolbar
           flexibleSpaceComponent={FlexibleSpace}
         />
-        <CurrentTimeIndicator />
+        <CurrentTimeIndicator
+          updateInterval={15000}
+          shadePreviousAppointments={true}
+          shadePreviousCells={true}
+        />
         <ViewSwitcher/>
-        <GroupingPanel 
+        <GroupingPanel
           cellComponent={GroupingPanelCell}
         />
       </Scheduler>
