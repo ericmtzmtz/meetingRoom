@@ -5,7 +5,8 @@ import {
   NotFoundView,
   MainLayout,
   Main,
-  Login
+  Login,
+  Calendar,
 } from './views'
 
 
@@ -41,6 +42,8 @@ export const Routes = ({toggleTheme}) => {
         {path: '*', element: <Navigate to="404" />},
         {path: '/index', element: <Main />},
         {path: '/', element: <Navigate to="index" />},
+        {path: '/dashboard', element: <Calendar />},
+        
       ]
     },
     {

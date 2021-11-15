@@ -4,6 +4,9 @@ import { Accounts } from 'meteor/accounts-base';
 // Importamos metodos
 import '/imports/startup/server';
 
+// Importamos publications
+import '/imports/api/Users/publications'
+
 var users = [
   { name: "Usuario", email: "user@mail.com", roles: ['user'] },
   { name: "Admin", email: "admin@mail.com", roles: ['admin'] },
