@@ -31,32 +31,47 @@ import {
 
 const currentDate = new Date();
 const schedulerData = [
+    // {
+    //   title: 'Website Re-Design Plan',
+    //   room_id: 1,
+    //   startDate: new Date('2021-11-16T11:00'),
+    //   endDate: new Date('2021-11-16T13:00'),
+    //   id: 0,
+    // }, 
     {
-      title: 'Website Re-Design Plan',
-      room_id: 1,
-      startDate: new Date('2021-11-15T11:00'),
-      endDate: new Date('2021-11-15T13:00'),
-      id: 0,
-    }, {
       title: 'Book Flights to San Fran for Sales Trip',
       room_id: 2,
-      startDate: new Date('2021-11-15T09:00'),
-      endDate: new Date('2021-11-15T11:00'),
+      startDate: new Date('2021-11-16T09:00'),
+      endDate: new Date('2021-11-16T11:00'),
       id: 1,
     }, {
       title: 'Install New Router in Dev Room',
       room_id: 3,
-      startDate: new Date('2021-11-15T13:00'),
-      endDate: new Date('2021-11-15T15:00'),
+      startDate: new Date('2021-11-16T13:00'),
+      endDate: new Date('2021-11-16T15:00'),
       id: 2,
     },
     {
       title: 'Install New Router in Dev Room',
       room_id: 4,
-      startDate: new Date('2021-11-15T10:00'),
-      endDate: new Date('2021-11-15T12:00'),
+      startDate: new Date('2021-11-16T10:00'),
+      endDate: new Date('2021-11-16T12:00'),
       id: 3,
     },
+    // {
+    //   title: 'Test',
+    //   room_id: 1,
+    //   startDate: new Date('2021-11-16T09:30'),
+    //   endDate: new Date('2021-11-16T10:00'),
+    //   id: 4,
+    // },
+    // {
+    //   title: '3er reunion',
+    //   room_id: 1,
+    //   startDate: new Date('2021-11-16T14:30'),
+    //   endDate: new Date('2021-11-16T16:00'),
+    //   id: 5,
+    // },
   ];
 
 const room_data = [
@@ -153,21 +168,6 @@ export const Calendar = () => {
     //   instances: []
     // }
   ])
-
-  const filter_appointment = () => {
-    let room_1 = data.filter(appointment=> appointment.room_id === 1)
-    let room_2 = data.filter(appointment=> appointment.room_id === 2)
-    let room_3 = data.filter(appointment=> appointment.room_id === 3)
-    let room_4 = data.filter(appointment=> appointment.room_id === 4)
-    console.log(room_1);
-    return (
-      data.filter(appointment => {
-        console.log(appointment);
-      })
-    )
-  }
-
-  // filter_appointment()
 
   const PrioritySelectorItem = ({color, text: resourceTitle,}) => {
     const text = resourceTitle || 'Ver Todas las salas';
@@ -296,16 +296,96 @@ export const Calendar = () => {
     }
   }
 
+  const filter_appointment = (room_id) => {
+    // const data = []
+    let room_appointment = data.filter(appointment=> appointment.room_id === room_id)
+    // data.push()
+    return room_appointment
+  }
+
   const handle_Changes = ({added, changed, deleted}) => {
     if (added) {
-      if(added["endDate"] - added["startDate"] > 7200000){
+      const startingAddedId = data.length > 0 ? data[data.length - 1].id + 1 : 0;
+      // checamos si el evento sobre pasa las 2 horas
+      if(added["endDate"] - added["startDate"] > 7200000 || added["allDay"] === true){
         enqueueSnackbar(
-          'Ocurrio un error No puedes programar mas de 2 horas!'
+          'Ocurrio un error No puedes agendar una sala por mas de 2 horas!'
           , {variant: 'error'})
         return null
       }
-      const startingAddedId = data.length > 0 ? data[data.length - 1].id + 1 : 0;
-      setData([...data, { id: startingAddedId, ...added }]);
+
+      // 1 filtramos los eventos de esa sala
+      const eventos_room = filter_appointment(added["room_id"]);
+      // 2 filtramos los eventos anteriores pero del dia de que quiero agendar
+      const eventos_dia = eventos_room.filter(events => events.startDate.getDate() === added.startDate.getDate());
+      // 3 si es mayor a 9 am podemos proceder
+      const after_9am = added.startDate.getHours() >= 9;
+      
+      if (eventos_dia.length != 0) {
+        // 4 por cada uno de los eventos obtenidos en el paso 2 checamos si 
+        //   la hora de inicio del evento que quiero agendar es mayor la hora de inicio y termino del
+        //   primer evento en el loop for o map 
+        //   la hora de termino tiene que ser menor a la hora de incio del siguiente evento de lo
+        //   contrario se empalmaran
+        if (after_9am){ // Checamos si el evento es despues de las 9 am
+          // configuramos algunas const para limpiar codigo
+          const new_event_startHour = added.startDate;
+          const new_event_endHour = added.endDate;
+          // seteamos variables para devolver
+          let inicio_antes = false;
+          let inicio_despues = false;
+          let termino_antes = false;
+          let termino_despues = false;
+          let insert = false;
+          eventos_dia.map((evento) => { // Mapeamos los eventos del dia en esa sala
+            const event_map_startHour = evento.startDate;
+            const event_map_endHour = evento.endDate;
+            inicio_antes = false;
+            inicio_despues = false;
+            termino_antes = false;
+            termino_despues = false;
+
+            if (new_event_startHour < event_map_startHour){
+              inicio_antes = true
+              inicio_despues = false
+              console.log(`Inicia Antes que ${evento.title} - ${inicio_antes}`);
+            } else if (new_event_startHour > event_map_startHour){
+              inicio_despues = true
+              console.log(`Inicia Despues que ${evento.title} - ${inicio_despues}`);
+            } 
+
+            if(new_event_endHour > event_map_startHour){
+              termino_despues = true;
+              insert = false
+              console.log(`Termina Despues que ${evento.title} - ${termino_despues}`);
+            } else if (new_event_endHour <= event_map_startHour){
+              termino_antes = true;
+              console.log(`Termina Antes que ${evento.title} - ${termino_antes}`);
+            }
+          })
+
+          console.log(
+            `Inicia antes ${inicio_antes} && 
+            Despues ${inicio_despues} && 
+            termina Antes ${termino_antes}
+            termina Despues ${termino_despues}
+            `);
+          
+          console.log(insert);
+          if (!insert){
+            console.log('Seteando evento');
+            setData([...data, { id: startingAddedId, ...added }]); // configuro el evento.
+          } else {
+            enqueueSnackbar(
+              'Ocurrio un error No se pudo programar!'
+              , {variant: 'error'}
+            )
+          }
+        }
+      } else {
+        console.log('Sin eventos agregando uno');
+        setData([...data, { id: startingAddedId, ...added }]); // configuro el evento.
+      }
     }
     if (changed) {
       setData(data.map(appointment => (
@@ -358,6 +438,7 @@ export const Calendar = () => {
         <IntegratedGrouping />
         <IntegratedEditing />
         <AppointmentTooltip
+          showDeleteButton
           showOpenButton
           showCloseButton
         />
